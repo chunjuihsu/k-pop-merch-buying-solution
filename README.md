@@ -114,24 +114,31 @@ Example: apple, banana, water melon, orange, orange
 1. Click the menu: **`Kpop Merch Buying Solution`** → **`Assign Products to Orders`**
 2. Check the `assigned_product` column in the `orders` sheet for the results.
 
-### Step 10: Estimate Next Purchase Probability
+### Step 10: Check Satisfaction Score
+
+1. Go to the `main` sheet.
+2. You’ll see the **current satisfaction score** calculated based on how well the assignments match each customer’s priority picks.
+
+This score is based on rules defined in the `satisfaction_scoring_rules` sheet.
+
+Use this score to evaluate how effective your current purchase was.
+
+### Step 11: Estimate Next Purchase Probability
 
 1. Click: **`Kpop Merch Buying Solution`** → **`Estimate Probability Next Purchase Improves Score`**
 2. Check the `main` sheet to see the probability (%) that the next mystery box is going to improve customer satisfaction.
 
-### Step 11: Add More Purchases (Optional)
+### Step 12: Add More Purchases (Optional)
 
 If you buy another mystery box, add the new item to `products`. 
 
-Example: Add `strawberry`
-
-### Step 12: Re-run Assignments and Estimations
+### Step 13: Re-run Assignments and Estimations
 
 Repeat [Step 9](#step-9-assign-products-to-orders) and [Step 10](#step-10-estimate-next-purchase-probability) to update the satisfaction score and probabilities.
 
 If you are happy with the current satisfaction score and the probability of further improvement is low, you may decide to finish the process and start shipping to your customers.
 
-### Step 13: Reset Workspace
+### Step 14: Reset Workspace
 
 - To start fresh, go to **`Kpop Merch Buying Solution`** → **`Clear Workspace`**
 - To change the number of picks allowed per order, re-run **Initialize Workspace**.
