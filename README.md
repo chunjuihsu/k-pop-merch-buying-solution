@@ -68,7 +68,7 @@ If you are prompted with "Authorization Required" when continuing any of the fol
 ### Step 4: Copy the Script Code
 
 1. Open `Code.gs` (or create a new file).
-2. Paste the provided script code in `app.gs`.
+2. Paste the script code in `Code.gs` in this repository.
 
 ### Step 5: Initialize the Workspace
 
