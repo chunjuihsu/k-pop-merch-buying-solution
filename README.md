@@ -1,96 +1,156 @@
-# Kpop Merch Buying Solution
+# 🎤​ Kpop Merch Buying Solution
 
-The project aims to help Kpop Merch Buyers scale their businesses.
+A Google Sheets-based solution to help Kpop merch buyers scale their businesses and improve customer satisfaction by optimizing product allocation and purchase decisions using probability and assignment logic.
 
-## Background
+---
 
-The storm of Kpop has taken over the world, creating fans all over the world wanting to get the latest, limited, exclusive merches of their idols. Despite the huge demand world wide, the supply of them has been historically confined to the Korea. Many of the merches will only be released in Korea or will only be firstly available in the Korean market. Kpop merch buyers emerged in this background. They live in Korea, receiving orders world wide, helping their clients get the merches they want, satisfying the dream of Kpop fans in the every corner of the world.
+## 📌 Table of Contents
 
-My friend is one of those Kpop buyers. One day, I went to her new apartment for a housewarming party, and I noticed piles of boxes that were for Kpop merches piled on the ground. I asked how long it usually take for her to ship all of them to the customers. She replied that it might take up to a week, and stated her problems...
+- [📖 Background](#-background)
+- [🚨 Business Problem](#-business-problem)
+- [💡 The Solution](#-the-solution)
+- [🚀 Getting Started](#-getting-started)
+  - [Step 1: Create a Google Spreadsheet](#step-1-create-a-google-spreadsheet)
+  - [Step 2: Open App Script](#step-2-open-app-script)
+  - [Step 3 (Optional): Authorize the Script](#step-3-optional-authorize-the-script)
+  - [Step 4: Copy the Script Code](#step-4-copy-the-script-code)
+  - [Step 5: Initialize the Workspace](#step-5-initialize-the-workspace)
+  - [Step 6: Add Possible Products](#step-6-add-possible-products)
+  - [Step 7: Add Orders](#step-7-add-orders)
+  - [Step 8: Add Purchased Products](#step-8-add-purchased-products)
+  - [Step 9: Assign Products to Orders](#step-9-assign-products-to-orders)
+  - [Step 10: Estimate Next Purchase Probability](#step-10-estimate-next-purchase-probability)
+  - [Step 11: Add More Purchases (Optional)](#step-11-add-more-purchases-optional)
+  - [Step 12: Re-run Assignments and Estimations](#step-12-re-run-assignments-and-estimations)
+  - [Step 13: Reset Workspace](#step-13-reset-workspace)
+- [📈 What's Next](#-whats-next)
 
-## The Business Problem
+## 📖 Background
 
-When Kpop buyers go to buy Kpop merches, they rarely can select the exact item that they want to buy. As a sales tactic, Kpop companies usually sell the merch as mystery box.
+Kpop's global rise has brought with it a surge in demand for exclusive, limited-edition merchandise. However, many of these items are only available in South Korea, giving rise to a new type of professions: the **Kpop merch buyer**.
 
-For example, a Kpop company is selling cards for its Kpop group, which has ten members. Instead of selling the cards for each member stand alone, the company sell the cards as mystery box, which a customer cannot know what is inside before the purchase. A customer can only know the idol of the card that he or she purchased after openning the box. Often, they won't find the card of their most wanted idol, which causes them to buy another - a true sales tactic!
+These individuals help international fans get merch, acting as middlemen who purchase and ship products overseas. One major challenge they face is the **mystery box** nature of most merch — buyers don't know what they’re getting until after the purchase.
 
-Due to this uncertainty, when Kpop buyers take order from their customers, they usually allow the customers to choose more than one items that they want from the mystery box in need. This is to avoid the Kpop buyer can never get the items that the customer wants, and to manage the cost it requires for each order, which will be reflected in a more reasonable quote to the purchasement request.
+## 🚨 Business Problem
 
-But this creates two problems:
+1. **Mystery Box Merch**: Items are sold randomly (e.g., photo cards of different group members).
+2. **Uncertain Fulfillment**: Buyers allow customers to list multiple preferred items, but matching these efficiently is difficult.
+3. **Inefficient Allocation**: Time-consuming manual assignment of products to orders.
+4. **Cost Dilemma**: Whether or not to buy another mystery box is a gamble.
 
-1. It takes time to allocate the products as each customer has more than one pick.
-2. The Kpop buyer doesn't know whether to buy one more mystery box to see whether there will be something wanted. The more mystery box the Kpop buyer buys, the higher the total cost to deliver the orders, and hence, the less profit it gots!
+## 💡 The Solution
 
-As a data analyst, I soon understand that it is an assignment and probability problems. I said that I can help, and here comes the solutions.
+This tool offers two key features to solve the problems above:
 
-## The Solutions
+- ✅ **One-click product assignment**: Match available products to customer preferences optimally.
+- 📊 **Purchase probability estimation**: Estimate the probability that buying one more mystery box will improve total customer satisfaction.
 
-The solution provides two core functions to solve the presented busieness problems:
+---
 
-1. One-click assign prodcuts to orders in a way that best satisfies each customer's need.
-2. Estimate the probablity that your next purchase can result in items that better satisfy the customers need, i.e., the probablity that the next purchase will be items on a higer priority pick of your customers.
+## 🚀 Getting Started
 
-## Getting Started
+### Step 1: Create a Google Spreadsheet
 
-### Step One: Use your account to create a google spreadsheet
-
-### Step One: Open App Script through the spreadsheet
-
-### Step Two (Optional): Authorize your account to have the permission to this project
-
-If on Step Five, you are prompted with 'Authorization required', you will need to authorize your account to have the permission to this project.
-
-Technically, what you will do is making this project allowing access for your account since this is your project.
-
-To do so, follow instruction stated in this tutoiral: https://web.archive.org/web/20230207010146/https://aimanfikri.com/2022/05/09/this-app-is-blocked-error-on-google-apps-script-solution/
-
-### Step Three: Copy and paste the code in app.gs to the the editor in App Script
-
-By default, there will be a file called Code.gs. You can paste the code in it, but you can also past the code in any other file if you want.
-
-### Step Four: Go back to the sheet and refresh.
-
-After refreshing, you should see a new tab 'Kpop Merch Bying Solution' in the menu.
-
-### Step Five: Click 'Kpop Merch Bying Solution' and click 'Initialize Workspace'
-
-You will be asked to enter how many picks each order is allowed.
-
-For example, you allow your customer to have up to three picks per order, key in 3. Remember that you can only key in a number from 1 to 10.
-
-After the initialization, you will have six sheets in the file: 'main', 'orders', 'products', 'possible_products', 'satisfaction_scoring_rules', 'assignment_result'.
-
-There will be columns initialized for each sheet, and you can see there is default values in 'satsifaction_scoring_rules'
-
-### Step Six: Fill in possible products
-
-Suppose you are buying a product with seven types, i.e., a mystery box with sevent different results.
-
-Fill in all these sevent possible proudct types in 'possible_products', as shown in the screenshot.
-
-In this example, we have: 'apple', 'banana', 'orange', 'grapes', 'strawberry', 'water mellon', 'pineapple'
-
-### Step Seven: Fill in your order data
-
-Suppose you have collected the orders from your customers, and in total you have five. Each of them choose from one two three products that they want.
-
-The data should look like this:
-
-| id | first_pick   | second_pick   | third_pick  |
-|----|--------------|---------------|-------------|
-| 1  | apple        |               |             |
-| 2  | apple        | water mellon  | strawberry  |
-| 3  | banana       | pineapple     |             |
-| 4  | orange       | banana        | grapes      |
-| 5  | grapes       | water mellon  |             |
-
-The first order has only one pick: apple, meaning that the customer wants only apple, and receiving apply, he or she will be the most satisfied.
-
-The second order has three orders. The first one is apply, the second one is water mellon, and the third one is strawberry. This means that the second customer is ok in receiving apple, water mellon, or starberry, but he or she will be the most satisfied if he or she receives an apple.
-
-Fill this data in the 'orders' sheet as shown in the screenshot:
-
-### Step Eight: Go to buy the products and put the products you have in 'products'
+Create a new Google Sheet with your account.
 
 
+### Step 2: Open App Script
+
+From your Sheet: Click `Extensions` → `Apps Script`
+
+
+### Step 3 (Optional): Authorize the Script
+
+If you are prompted with "Authorization Required" when continuing any of the following steps, follow this guide to enable access:
+
+[Fix "This app is blocked" error](https://web.archive.org/web/20230207010146/https://aimanfikri.com/2022/05/09/this-app-is-blocked-error-on-google-apps-script-solution/)
+
+### Step 4: Copy the Script Code
+
+1. Open `Code.gs` (or create a new file).
+2. Paste the provided script code in `app.gs`.
+
+### Step 5: Initialize the Workspace
+
+1. Refresh your sheet.
+2. Go to the new menu: **`Kpop Merch Buying Solution`** → **`Initialize Workspace`**
+3. Enter the number of picks (1–10) each customer can select.
+
+This will create 6 sheets:
+
+- `main`
+- `orders`
+- `products`
+- `possible_products`
+- `satisfaction_scoring_rules`
+- `assignment_result`
+
+### Step 6: Add Possible Products
+
+In `possible_products`, list every potential merch outcome.
+
+Example: apple, banana, orange, grapes, strawberry, water melon, pineapple
+
+### Step 7: Add Orders
+
+In the `orders` sheet, fill in your customer orders like so:
+
+| id | first_pick | second_pick  | third_pick  |
+|----|------------|--------------|-------------|
+| 1  | apple      |              |             |
+| 2  | apple      | water melon  | strawberry  |
+| 3  | banana     | pineapple    |             |
+| 4  | orange     | banana       | grapes      |
+| 5  | grapes     | water melon  |             |
+
+### Step 8: Add Purchased Products
+
+In `products`, enter what items you actually received.
+
+Example: apple, banana, water melon, orange, orange
+
+### Step 9: Assign Products to Orders
+
+1. Click the menu: **`Kpop Merch Buying Solution`** → **`Assign Products to Orders`**
+2. Check the `assigned_product` column in the `orders` sheet for the results.
+
+### Step 10: Estimate Next Purchase Probability
+
+1. Click: **`Kpop Merch Buying Solution`** → **`Estimate Probability Next Purchase Improves Score`**
+2. Check the `main` sheet to see the probability (%) that the next mystery box is going to improve customer satisfaction.
+
+### Step 11: Add More Purchases (Optional)
+
+If you buy another mystery box, add the new item to `products`. 
+
+Example: Add `strawberry`
+
+### Step 12: Re-run Assignments and Estimations
+
+Repeat [Step 9](#step-9-assign-products-to-orders) and [Step 10](#step-10-estimate-next-purchase-probability) to update the satisfaction score and probabilities.
+
+If you are happy with the current satisfaction score and the probability of further improvement is low, you may decide to finish the process and start shipping to your customers.
+
+### Step 13: Reset Workspace
+
+- To start fresh, go to **`Kpop Merch Buying Solution`** → **`Clear Workspace`**
+- To change the number of picks allowed per order, re-run **Initialize Workspace**.
+
+---
+
+## 📈 What's Next
+
+There are two exciting directions I want to explore:
+
+1. **Web UI Frontend**
+
+Replace spreadsheet UI with a user-friendly web app.
+
+2. **Optimal Purchase Recommendation**
+  
+Recommend the number of mystery boxes to buy based on cost-benefit analysis using probability theory and current orders.
+
+---
+
+Have suggestions or want to contribute? PRs and issues welcome!
 
