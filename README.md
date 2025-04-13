@@ -144,7 +144,7 @@ Use this score to evaluate how effective your current purchase was.
 ### Step 11: Estimate Next Purchase Probability
 
 1. Click: **`Kpop Merch Buying Solution`** → **`Estimate Probability Next Purchase Improves Score`**
-2. Check the `main` sheet to see the probability (%) that the next mystery box is going to improve customer satisfaction.
+2. Check the `main` sheet to see the probability that the next mystery box is going to improve customer satisfaction.
 
 ![Estimate Next Purchase Probability](assets/images/estimate-next-purchase-probability.png)
 
