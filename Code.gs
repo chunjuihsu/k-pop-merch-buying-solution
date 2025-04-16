@@ -1,7 +1,7 @@
 
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
-  ui.createMenu('K-pop Merch Buying Solution')
+  ui.createMenu('Kpop Merch Buying Solution')
     .addItem('Initialize Workspace', 'initializeWorkspace')
     .addItem('Clear Workspace', 'clearWorkspace')
     .addItem('Assign Products to Orders', 'assignProductsToOrders')
@@ -187,6 +187,7 @@ function estimateProbabilityNextPurchaseImprovesScore() {
     handleError(
       'One or more required sheets (orders, products, possible_products, satisfaction_scoring_rules) are missing.'
     );
+    return;
   }
 
   const ordersData = readSheetData(ordersSheet);
@@ -198,7 +199,9 @@ function estimateProbabilityNextPurchaseImprovesScore() {
   const possibleProdData = readSheetData(possibleProductSheet).rows;
   if (possibleProdData.length === 0) {
     handleError('No possible products found. Please add to "possible_products" before running the estimator.');
+    return;
   }
+
   const possibleProducts = possibleProdData.map(function(r) {
     return r['product_type'];
   });
@@ -210,48 +213,42 @@ function estimateProbabilityNextPurchaseImprovesScore() {
   });
 
   const currentSatisfactionScore = getCurrentSatisfactionScore();
+  
+  const improvedProductTypes = [];
 
-  const numTrials = possibleProducts.length * 10;
-  const scoreImprovedResults = [];
+  possibleProducts.forEach(function(productType) {
+    let simulatedProducts = products.slice();
+    simulatedProducts.push({ product_type: productType });
 
-  for (let trial = 0; trial < numTrials; trial++) {
-    const randomIndex = Math.floor(Math.random() * possibleProducts.length);
-    const newProductType = possibleProducts[randomIndex];
-    const newProduct = { product_type: newProductType };
-
-    const simulationProducts = products.slice();
-    simulationProducts.push(newProduct);
-
-    const simWeightMatrix = buildWeightMatrix(orders, ordersHeaders, simulationProducts, satisfaction);
+    const simWeightMatrix = buildWeightMatrix(orders, ordersHeaders, simulatedProducts, satisfaction);
     const simCostMatrix = buildCostMatrix(simWeightMatrix);
     const assignment = hungarianAlgorithm(simCostMatrix);
 
     let totalSatisfaction = 0;
     for (let i = 0; i < orders.length; i++) {
       const assignedCol = assignment[i];
-      if (
-        assignedCol < simulationProducts.length &&
-        simWeightMatrix[i][assignedCol] > -1000000
-      ) {
+      if (assignedCol < simulatedProducts.length && simWeightMatrix[i][assignedCol] > -1000000) {
         totalSatisfaction += simWeightMatrix[i][assignedCol];
       }
     }
 
-    scoreImprovedResults.push(totalSatisfaction > currentSatisfactionScore ? 1 : 0);
-  }
+    if (totalSatisfaction > currentSatisfactionScore) {
+      improvedProductTypes.push(productType);
+    }
+  });
 
-  const sum = scoreImprovedResults.reduce(function(a, b) { return a + b; }, 0);
-  const probabilityNextPurchaseImproves = sum / scoreImprovedResults.length;
+  const probability = possibleProducts.length > 0 ? improvedProductTypes.length / possibleProducts.length : 0;
 
   const mainSheet = ss.getSheetByName('main');
   const mainData = mainSheet.getDataRange().getValues();
   const mainHeaders = mainData[0];
-  const probIndex = mainHeaders.indexOf('probability_next_purchase_improves_score');
-  if (probIndex === -1) {
-    handleError('Column "probability_next_purchase_improves_score" not found in "main" sheet.');
-  }
 
-  mainSheet.getRange(2, probIndex + 1).setValue(probabilityNextPurchaseImproves);
+  const resultColIndex = mainHeaders.indexOf('probability_next_purchase_improves_score');
+  if (resultColIndex === -1) {
+    handleError('Column "probability_next_purchase_improves_score" not found in "main" sheet.');
+    return;
+  }
+  mainSheet.getRange(2, resultColIndex + 1).setValue(probability);
 }
 
 /*
