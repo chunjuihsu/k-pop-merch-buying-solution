@@ -23,7 +23,7 @@ A Google Sheets-based solution to help K-pop merch buyers scale their businesses
   - [Step 11: Estimate Next Purchase Probability](#step-11-estimate-next-purchase-probability)
   - [Step 12 (Optional): Add More Purchases](#step-12-optional-add-more-purchases)
   - [Step 13: Re-run Assignments and Estimations](#step-13-re-run-assignments-and-estimations)
-  - [Step 14: Reset Workspace](#step-14-reset-workspace)
+  - [Step 14: Reset the Workspace](#step-14-reset-the-workspace)
 - [📈 What's Next](#-whats-next)
 
 ## 📖 Background
@@ -72,7 +72,7 @@ You will need to configure the project for it to work. To do so, follow this gui
 
 Copy the script code in `Code.gs` in this repository and paste it in the `Code.gs` of your project.
 
-![Copy script code](assets/images/copy-script-code.png)
+![Copy the script code](assets/images/copy-the-script-code.png)
 
 ### Step 5: Initialize the Workspace
 
@@ -80,7 +80,7 @@ Copy the script code in `Code.gs` in this repository and paste it in the `Code.g
 2. Go to the new menu: **`K-pop Merch Buying Solution`** → **`Initialize Workspace`**
 3. Enter the number of picks (1–10) each customer can select.
 
-![New menu will show](assets/images/new-menu.png)
+![Initialize the workspace](assets/images/initialize-the-workspace.png)
 
 This will create 6 sheets:
 
@@ -91,13 +91,11 @@ This will create 6 sheets:
 - `satisfaction_scoring_rules`
 - `assignment_result`
 
-![Six new sheets will be added](assets/images/six-sheets.png)
-
 ### Step 6: Add Possible Products
 
 In `possible_products`, list every potential merch outcome.
 
-Example: apple, banana, orange, grapes, strawberry, water melon, pineapple
+Example: apple, banana, orange, grapes, strawberry, watermelon, pineapple
 
 ![Add possible products](assets/images/add-possible-products.png)
 
@@ -105,13 +103,13 @@ Example: apple, banana, orange, grapes, strawberry, water melon, pineapple
 
 In the `orders` sheet, fill in your customer orders like so:
 
-| id | first_pick | second_pick  | third_pick  |
-|----|------------|--------------|-------------|
-| 1  | apple      |              |             |
-| 2  | apple      | water melon  | strawberry  |
-| 3  | banana     | pineapple    |             |
-| 4  | orange     | banana       | grapes      |
-| 5  | grapes     | water melon  |             |
+| id | first_pick | second_pick | third_pick  |
+|----|------------|-------------|-------------|
+| 1  | apple      |             |             |
+| 2  | apple      | watermelon  | strawberry  |
+| 3  | banana     | pineapple   |             |
+| 4  | orange     | banana      | grapes      |
+| 5  | grapes     | watermelon  |             |
 
 ![Add orders](assets/images/add-orders.png)
 
@@ -119,7 +117,7 @@ In the `orders` sheet, fill in your customer orders like so:
 
 In `products`, enter what items you actually received.
 
-Example: apple, banana, water melon, orange, orange
+Example: apple, banana, watermelon, orange, orange
 
 ![Add purchased products](assets/images/add-purchased-products.png)
 
@@ -129,14 +127,14 @@ Example: apple, banana, water melon, orange, orange
 2. Check the `assigned_product` column in the `orders` sheet for the results.
 
 ![Assign products to orders](assets/images/assign-products-to-orders.png)
-![Check assigned results](assets/images/assigned-product-result.png)
+![Assigned results](assets/images/assigned-results.png)
 
 ### Step 10: Check Satisfaction Score
 
 1. Go to the `main` sheet.
 2. You’ll see the **current satisfaction score** calculated based on how well the assignments match each customer’s priority picks.
 
-![Check current satisfaction score](assets/images/check-current-satisfaction-score.png)
+![Check satisfaction score](assets/images/check-satisfaction-score.png)
 
 This score is based on rules defined in the `satisfaction_scoring_rules` sheet.
 
@@ -147,15 +145,15 @@ Use this score to evaluate how effective your current purchase was.
 1. Click: **`K-pop Merch Buying Solution`** → **`Estimate Probability Next Purchase Improves Score`**
 2. Check the `main` sheet to see the probability that the next mystery box is going to improve customer satisfaction.
 
-![Estimate Next Purchase Probability](assets/images/estimate-next-purchase-probability.png)
+![Estimate next purchase probability](assets/images/estimate-next-purchase-probability.png)
 
 ### Step 12 (Optional): Add More Purchases
 
 If you buy another mystery box, add the new item to `products`.
 
-For example, add strawberry as a new product
+For example, add strawberry as a new product.
 
-![add strawberry as a new product](assets/images/add-strawberry.png)
+![Add more purchases](assets/images/add-more-purchases.png)
 
 ### Step 13: Re-run Assignments and Estimations
 
@@ -163,9 +161,11 @@ Repeat [Step 9](#step-9-assign-products-to-orders), [Step 10](#step-10-check-sat
 
 If you are happy with the satisfaction score and the probability of further improvement is low, you may decide to finish the process and start shipping to your customers.
 
-![Check score and estimate result](assets/images/score-and-estimate.png)
+![New results](assets/images/new-results.png)
 
-### Step 14: Reset Workspace
+### Step 14: Reset the Workspace
+
+After you finish buying, remember to reset the workspace.
 
 - To start fresh, go to **`K-pop Merch Buying Solution`** → **`Clear Workspace`**
 - To change the number of picks allowed per order, re-run **Initialize Workspace**.
