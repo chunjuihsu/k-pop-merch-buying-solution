@@ -1,18 +1,269 @@
-/************/
-/* UTILITIES */
-/************/
+
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('Kpop Merch Buying Solution')
+    .addItem('Initialize Workspace', 'initializeWorkspace')
+    .addItem('Clear Workspace', 'clearWorkspace')
+    .addItem('Assign Products to Orders', 'assignProductsToOrders')
+    .addItem('Estimate Probability Next Purchase Improves Score', 'estimateProbabilityNextPurchaseImprovesScore')
+    .addToUi();
+}
+
+/*
+  USER-FACING FUNCTIONS
+*/
+
+function initializeWorkspace() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const response = ui.prompt(
+    'Number of Picks',
+    'Enter how many picks each order is allowed (1 to 10):',
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) return;
+
+  const numPicks = parseInt(response.getResponseText(), 10);
+  if (isNaN(numPicks) || numPicks < 1 || numPicks > 10) {
+    handleError('Please enter a valid number between 1 and 10.');
+  }
+
+  const orderHeaders = ['id'];
+  const rankSuffixes = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+  for (let i = 1; i <= numPicks; i++) {
+    orderHeaders.push(rankSuffixes[i - 1] + '_pick');
+  }
+
+  const desiredSheets = [
+    'main',
+    'orders',
+    'products',
+    'possible_products',
+    'satisfaction_scoring_rules',
+    'assignment_result'
+  ];
+
+  const headersMap = {
+    'main': ['current_satisfaction_score', 'probability_next_purchase_improves_score'],
+    'orders': orderHeaders,
+    'products': ['id', 'product_type'],
+    'possible_products': ['product_type'],
+    'satisfaction_scoring_rules': ['pick_level', 'score'],
+    'assignment_result': ['id', 'timestamp', 'total_satisfaction_score']
+  };
+
+  desiredSheets.forEach(function(name) {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      sheet = ss.insertSheet(name);
+    } else {
+      sheet.clear();
+    }
+    sheet.appendRow(headersMap[name]);
+
+    if (name === 'satisfaction_scoring_rules') {
+      for (let i = 0; i < numPicks; i++) {
+        const pick = rankSuffixes[i];
+        const score = numPicks - i;
+        sheet.appendRow([pick, score]);
+      }
+    }
+  });
+
+  const allSheets = ss.getSheets();
+  const sheetsToDelete = allSheets.filter(function(sheet) {
+    return desiredSheets.indexOf(sheet.getName()) === -1;
+  });
+
+  if (allSheets.length - sheetsToDelete.length >= 1) {
+    sheetsToDelete.forEach(function(sheet) {
+      ss.deleteSheet(sheet);
+    });
+  } else {
+    handleError('Cannot delete all sheets — at least one sheet must remain.');
+  }
+
+  SpreadsheetApp.flush();
+}
+
+function clearWorkspace() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetsToClear = [
+    'main',
+    'orders',
+    'products',
+    'possible_products',
+    'assignment_result'
+  ];
+  
+  sheetsToClear.forEach(function(sheetName) {
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      handleError('Sheet "' + sheetName + '" not found.');
+    } else {
+      const lastRow = sheet.getLastRow();
+      if (lastRow > 1) {
+        sheet.getRange(2, 1, lastRow - 1, sheet.getMaxColumns()).clearContent();
+      }
+    }
+  });
+}
+
+function assignProductsToOrders() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ordersSheet = ss.getSheetByName('orders');
+  const productsSheet = ss.getSheetByName('products');
+  const scoringRulesSheet = ss.getSheetByName('satisfaction_scoring_rules');
+
+  if (!ordersSheet || !productsSheet || !scoringRulesSheet) {
+    handleError('One or more required sheets (orders, products, satisfaction_scoring_rules) are missing.');
+  }
+
+  const ordersData = readSheetData(ordersSheet);
+  const ordersHeaders = ordersData.headers;
+  const orders = ordersData.rows;
+
+  const productsData = readSheetData(productsSheet);
+  const products = productsData.rows;
+
+  const scoringData = readSheetData(scoringRulesSheet).rows;
+  const satisfaction = {};
+  scoringData.forEach(function(row) {
+    satisfaction[row['pick_level']] = row['score'];
+  });
+
+  const weightMatrix = buildWeightMatrix(orders, ordersHeaders, products, satisfaction);
+  const numOrders = orders.length;
+  const numProducts = products.length;
+
+  const costMatrix = buildCostMatrix(weightMatrix);
+
+  const assignment = hungarianAlgorithm(costMatrix);
+
+  let totalSatisfaction = 0;
+  const assignedResults = [];
+  for (let i = 0; i < numOrders; i++) {
+    const assignedCol = assignment[i];
+    let assignedProduct = '';
+
+    if (assignedCol < numProducts && weightMatrix[i][assignedCol] > -1000000) {
+      assignedProduct = products[assignedCol]['product_type'];
+      totalSatisfaction += weightMatrix[i][assignedCol];
+    }
+    assignedResults.push([assignedProduct]);
+  }
+
+  let assignedProductIndex = ordersHeaders.indexOf('assigned_product');
+  if (assignedProductIndex === -1) {
+    assignedProductIndex = ordersHeaders.length;
+    ordersSheet.getRange(1, assignedProductIndex + 1).setValue('assigned_product');
+  }
+  ordersSheet
+    .getRange(2, assignedProductIndex + 1, assignedResults.length, 1)
+    .setValues(assignedResults);
+
+  const assignmentResultSheet = ss.getSheetByName('assignment_result');
+  if (!assignmentResultSheet) {
+    handleError('Sheet "assignment_result" not found.');
+  }
+
+  const uniqueId = Utilities.getUuid();
+  const timestamp = new Date();
+  assignmentResultSheet.appendRow([uniqueId, timestamp, totalSatisfaction]);
+
+  updateCurrentSatisfactionScore();
+}
+
+function estimateProbabilityNextPurchaseImprovesScore() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ordersSheet = ss.getSheetByName('orders');
+  const productsSheet = ss.getSheetByName('products');
+  const possibleProductSheet = ss.getSheetByName('possible_products');
+  const scoringRulesSheet = ss.getSheetByName('satisfaction_scoring_rules');
+
+  if (!ordersSheet || !productsSheet || !possibleProductSheet || !scoringRulesSheet) {
+    handleError(
+      'One or more required sheets (orders, products, possible_products, satisfaction_scoring_rules) are missing.'
+    );
+  }
+
+  const ordersData = readSheetData(ordersSheet);
+  const ordersHeaders = ordersData.headers;
+  const orders = ordersData.rows;
+
+  const products = readSheetData(productsSheet).rows;
+
+  const possibleProdData = readSheetData(possibleProductSheet).rows;
+  if (possibleProdData.length === 0) {
+    handleError('No possible products found. Please add to "possible_products" before running the estimator.');
+  }
+  const possibleProducts = possibleProdData.map(function(r) {
+    return r['product_type'];
+  });
+
+  const scoringData = readSheetData(scoringRulesSheet).rows;
+  const satisfaction = {};
+  scoringData.forEach(function(row) {
+    satisfaction[row['pick_level']] = row['score'];
+  });
+
+  const currentSatisfactionScore = getCurrentSatisfactionScore();
+
+  const numTrials = possibleProducts.length * 10;
+  const scoreImprovedResults = [];
+
+  for (let trial = 0; trial < numTrials; trial++) {
+    const randomIndex = Math.floor(Math.random() * possibleProducts.length);
+    const newProductType = possibleProducts[randomIndex];
+    const newProduct = { product_type: newProductType };
+
+    const simulationProducts = products.slice();
+    simulationProducts.push(newProduct);
+
+    const simWeightMatrix = buildWeightMatrix(orders, ordersHeaders, simulationProducts, satisfaction);
+    const simCostMatrix = buildCostMatrix(simWeightMatrix);
+    const assignment = hungarianAlgorithm(simCostMatrix);
+
+    let totalSatisfaction = 0;
+    for (let i = 0; i < orders.length; i++) {
+      const assignedCol = assignment[i];
+      if (
+        assignedCol < simulationProducts.length &&
+        simWeightMatrix[i][assignedCol] > -1000000
+      ) {
+        totalSatisfaction += simWeightMatrix[i][assignedCol];
+      }
+    }
+
+    scoreImprovedResults.push(totalSatisfaction > currentSatisfactionScore ? 1 : 0);
+  }
+
+  const sum = scoreImprovedResults.reduce(function(a, b) { return a + b; }, 0);
+  const probabilityNextPurchaseImproves = sum / scoreImprovedResults.length;
+
+  const mainSheet = ss.getSheetByName('main');
+  const mainData = mainSheet.getDataRange().getValues();
+  const mainHeaders = mainData[0];
+  const probIndex = mainHeaders.indexOf('probability_next_purchase_improves_score');
+  if (probIndex === -1) {
+    handleError('Column "probability_next_purchase_improves_score" not found in "main" sheet.');
+  }
+
+  mainSheet.getRange(2, probIndex + 1).setValue(probabilityNextPurchaseImproves);
+}
+
+/*
+  UTILITIES
+*/
+
 function handleError(errorMessage) {
-  // Shows a UI alert to the user, and then throws an error to stop the script execution.
   const ui = SpreadsheetApp.getUi();
   ui.alert('Error', errorMessage, ui.ButtonSet.OK);
   throw new Error(errorMessage);
 }
 
-/**
- * Reads all data from a given sheet and returns an object containing:
- *  - headers: an array of header names
- *  - rows: an array of row objects keyed by their respective headers
- */
 function readSheetData(sheet) {
   if (!sheet) {
     handleError('Provided sheet is not found or is undefined.');
@@ -35,15 +286,10 @@ function readSheetData(sheet) {
   return { headers, rows };
 }
 
-/**
- * Converts rank-based pick columns (e.g., "first_pick") to satisfaction scores
- * using a dictionary that maps rank -> score (e.g. { "first": 3, "second": 2, ... }).
- * Returns a 2D array 'weightMatrix' indexed by [orderIndex][productIndex].
- */
 function buildWeightMatrix(orders, orderHeaders, products, satisfaction) {
   const numOrders = orders.length;
   const numProducts = products.length;
-  const disallowedWeight = -1000000; // A large negative weight to denote an invalid match
+  const disallowedWeight = -1000000;
   const weightMatrix = [];
 
   for (let i = 0; i < numOrders; i++) {
@@ -53,14 +299,13 @@ function buildWeightMatrix(orders, orderHeaders, products, satisfaction) {
       const product = products[j];
       let weight = disallowedWeight;
 
-      // Check each pick column
       for (let k = 1; k < orderHeaders.length; k++) {
         const header = orderHeaders[k];
         if (header.endsWith('_pick')) {
           if (order[header] && order[header].toString() === product['product_type'].toString()) {
-            const rank = header.split('_')[0]; // e.g., "first" from "first_pick"
+            const rank = header.split('_')[0];
             weight = satisfaction[rank] !== undefined ? satisfaction[rank] : 0;
-            break; // Stop after the first found match
+            break;
           }
         }
       }
@@ -72,18 +317,10 @@ function buildWeightMatrix(orders, orderHeaders, products, satisfaction) {
   return weightMatrix;
 }
 
-/**
- * Converts a 'weightMatrix' (which is for maximization) into a 'costMatrix'
- * (which is for minimization) by multiplying by -1.
- * For a square matrix needed by Hungarian, this function will ensure the result is square
- * by adding dummy rows/columns as needed.
- */
 function buildCostMatrix(weightMatrix) {
   const n = weightMatrix.length;
   const m = weightMatrix[0].length;
 
-  // The matrix must be square for the Hungarian algorithm;
-  // we use max(n, m) as the dimension for the final matrix.
   const size = Math.max(n, m);
   const costMatrix = [];
 
@@ -91,10 +328,8 @@ function buildCostMatrix(weightMatrix) {
     const row = [];
     for (let j = 0; j < size; j++) {
       if (i < n && j < m) {
-        // Invert the weight
         row.push(-weightMatrix[i][j]);
       } else {
-        // Dummy row/column
         row.push(0);
       }
     }
@@ -104,14 +339,7 @@ function buildCostMatrix(weightMatrix) {
   return costMatrix;
 }
 
-/**
- * Implementation of the Hungarian Algorithm (a.k.a. Kuhn–Munkres) for the assignment problem.
- * Expects a square cost matrix and returns an array 'result' of length n
- * where result[i] is the column index assigned to row i.
- *
- * (Minimization version)
- */
-function _hungarianAlgorithm(costMatrix) {
+function hungarianAlgorithm(costMatrix) {
   const n = costMatrix.length;
   const u = new Array(n + 1).fill(0);
   const v = new Array(n + 1).fill(0);
@@ -167,10 +395,6 @@ function _hungarianAlgorithm(costMatrix) {
   return result;
 }
 
-/**
- * Reads the 'assignment_result' sheet and updates 'main' sheet's current_satisfaction_score
- * with the score from the latest timestamp.
- */
 function updateCurrentSatisfactionScore() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const assignmentSheet = ss.getSheetByName('assignment_result');
@@ -188,7 +412,6 @@ function updateCurrentSatisfactionScore() {
     handleError('The "assignment_result" sheet must have "timestamp" and "total_satisfaction_score" columns.');
   }
 
-  // Find row with the latest timestamp
   let latestRow = null;
   let maxTimestamp = 0;
 
@@ -206,7 +429,6 @@ function updateCurrentSatisfactionScore() {
 
   const currentSatisfactionScore = latestRow['total_satisfaction_score'];
 
-  // Write to main sheet
   const mainData = mainSheet.getDataRange().getValues();
   const mainHeaders = mainData[0];
   const scoreColIndex = mainHeaders.indexOf('current_satisfaction_score');
@@ -215,13 +437,9 @@ function updateCurrentSatisfactionScore() {
     handleError('Column "current_satisfaction_score" not found in "main" sheet.');
   }
 
-  // Update row 2 under current_satisfaction_score
   mainSheet.getRange(2, scoreColIndex + 1).setValue(currentSatisfactionScore);
 }
 
-/**
- * Retrieves the current satisfaction score from the 'main' sheet.
- */
 function getCurrentSatisfactionScore() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const mainSheet = ss.getSheetByName('main');
@@ -247,290 +465,4 @@ function getCurrentSatisfactionScore() {
   }
 
   return currentSatisfactionScore;
-}
-
-
-/***************************/
-/* MAIN USER-FACING SCRIPTS*/
-/***************************/
-
-function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  ui.createMenu('Kpop Merch Buying Solution')
-    .addItem('Initialize Workspace', 'initializeWorkspace')
-    .addItem('Clear Workspace', 'clearWorkspace')
-    .addItem('Assign Products to Orders', 'assignProductsToOrders')
-    .addItem('Estimate Probability Next Purchase Improves Score', 'estimateProbabilityNextPurchaseImprovesScore')
-    .addToUi();
-}
-
-function initializeWorkspace() {
-  const ui = SpreadsheetApp.getUi();
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  // Prompt the user for number of picks
-  const response = ui.prompt(
-    'Number of Picks',
-    'Enter how many picks each order is allowed (1 to 10):',
-    ui.ButtonSet.OK_CANCEL
-  );
-
-  if (response.getSelectedButton() !== ui.Button.OK) return;
-
-  const numPicks = parseInt(response.getResponseText(), 10);
-  if (isNaN(numPicks) || numPicks < 1 || numPicks > 10) {
-    handleError('Please enter a valid number between 1 and 10.');
-  }
-
-  // Build headers for the Orders sheet
-  const orderHeaders = ['id'];
-  const rankSuffixes = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
-  for (let i = 1; i <= numPicks; i++) {
-    orderHeaders.push(rankSuffixes[i - 1] + '_pick');
-  }
-
-  // Define desired sheet names and headers
-  const desiredSheets = [
-    'main',
-    'orders',
-    'products',
-    'possible_products',
-    'satisfaction_scoring_rules',
-    'assignment_result'
-  ];
-
-  const headersMap = {
-    'main': ['current_satisfaction_score', 'probability_next_purchase_improves_score'],
-    'orders': orderHeaders,
-    'products': ['id', 'product_type'],
-    'possible_products': ['product_type'],
-    'satisfaction_scoring_rules': ['pick_level', 'score'],
-    'assignment_result': ['id', 'timestamp', 'total_satisfaction_score']
-  };
-
-  // Create or clear these sheets
-  desiredSheets.forEach(function(name) {
-    let sheet = ss.getSheetByName(name);
-    if (!sheet) {
-      sheet = ss.insertSheet(name);
-    } else {
-      sheet.clear();
-    }
-    sheet.appendRow(headersMap[name]);
-
-    // Insert default satisfaction score per pick level
-    if (name === 'satisfaction_scoring_rules') {
-      for (let i = 0; i < numPicks; i++) {
-        const pick = rankSuffixes[i];
-        const score = numPicks - i;
-        sheet.appendRow([pick, score]);
-      }
-    }
-  });
-
-  // Delete sheets not in desiredSheets (if possible)
-  const allSheets = ss.getSheets();
-  const sheetsToDelete = allSheets.filter(function(sheet) {
-    return desiredSheets.indexOf(sheet.getName()) === -1;
-  });
-
-  if (allSheets.length - sheetsToDelete.length >= 1) {
-    sheetsToDelete.forEach(function(sheet) {
-      ss.deleteSheet(sheet);
-    });
-  } else {
-    handleError('Cannot delete all sheets — at least one sheet must remain.');
-  }
-
-  SpreadsheetApp.flush();
-}
-
-function clearWorkspace() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetsToClear = [
-    'main',
-    'orders',
-    'products',
-    'possible_products',
-    'assignment_result'
-  ];
-  
-  sheetsToClear.forEach(function(sheetName) {
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) {
-      handleError('Sheet "' + sheetName + '" not found.');
-    } else {
-      // Keep the header (row 1) and clear everything below it.
-      const lastRow = sheet.getLastRow();
-      if (lastRow > 1) {
-        sheet.getRange(2, 1, lastRow - 1, sheet.getMaxColumns()).clearContent();
-      }
-    }
-  });
-}
-
-function assignProductsToOrders() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const ordersSheet = ss.getSheetByName('orders');
-  const productsSheet = ss.getSheetByName('products');
-  const scoringRulesSheet = ss.getSheetByName('satisfaction_scoring_rules');
-
-  if (!ordersSheet || !productsSheet || !scoringRulesSheet) {
-    handleError('One or more required sheets (orders, products, satisfaction_scoring_rules) are missing.');
-  }
-
-  // Read Orders
-  const ordersData = readSheetData(ordersSheet);
-  const ordersHeaders = ordersData.headers;
-  const orders = ordersData.rows;
-
-  // Read Products
-  const productsData = readSheetData(productsSheet);
-  const products = productsData.rows;
-
-  // Read Scoring Rules
-  const scoringData = readSheetData(scoringRulesSheet).rows;
-  const satisfaction = {};
-  scoringData.forEach(function(row) {
-    satisfaction[row['pick_level']] = row['score'];
-  });
-
-  const weightMatrix = buildWeightMatrix(orders, ordersHeaders, products, satisfaction);
-  const numOrders = orders.length;
-  const numProducts = products.length;
-
-  // Convert weightMatrix -> costMatrix
-  const costMatrix = buildCostMatrix(weightMatrix);
-
-  // Solve via Hungarian algorithm
-  const assignment = _hungarianAlgorithm(costMatrix);
-
-  // Calculate total satisfaction; fill assigned results
-  let totalSatisfaction = 0;
-  const assignedResults = [];
-  for (let i = 0; i < numOrders; i++) {
-    const assignedCol = assignment[i];
-    let assignedProduct = '';
-
-    // If assignedCol < numProducts, and not disallowed, it is a valid product
-    if (assignedCol < numProducts && weightMatrix[i][assignedCol] > -1000000) {
-      assignedProduct = products[assignedCol]['product_type'];
-      totalSatisfaction += weightMatrix[i][assignedCol];
-    }
-    assignedResults.push([assignedProduct]);
-  }
-
-  // Write assigned product to the orders sheet
-  let assignedProductIndex = ordersHeaders.indexOf('assigned_product');
-  if (assignedProductIndex === -1) {
-    assignedProductIndex = ordersHeaders.length;
-    ordersSheet.getRange(1, assignedProductIndex + 1).setValue('assigned_product');
-  }
-  ordersSheet
-    .getRange(2, assignedProductIndex + 1, assignedResults.length, 1)
-    .setValues(assignedResults);
-
-  // Update assignment_result
-  const assignmentResultSheet = ss.getSheetByName('assignment_result');
-  if (!assignmentResultSheet) {
-    handleError('Sheet "assignment_result" not found.');
-  }
-
-  const uniqueId = Utilities.getUuid();
-  const timestamp = new Date();
-  assignmentResultSheet.appendRow([uniqueId, timestamp, totalSatisfaction]);
-
-  // Update main sheet's current satisfaction score
-  updateCurrentSatisfactionScore();
-}
-
-function estimateProbabilityNextPurchaseImprovesScore() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const ordersSheet = ss.getSheetByName('orders');
-  const productsSheet = ss.getSheetByName('products');
-  const possibleProductSheet = ss.getSheetByName('possible_products');
-  const scoringRulesSheet = ss.getSheetByName('satisfaction_scoring_rules');
-
-  if (!ordersSheet || !productsSheet || !possibleProductSheet || !scoringRulesSheet) {
-    handleError(
-      'One or more required sheets (orders, products, possible_products, satisfaction_scoring_rules) are missing.'
-    );
-  }
-
-  // Read Orders
-  const ordersData = readSheetData(ordersSheet);
-  const ordersHeaders = ordersData.headers;
-  const orders = ordersData.rows;
-
-  // Read Products
-  const products = readSheetData(productsSheet).rows;
-
-  // Read Possible Products
-  const possibleProdData = readSheetData(possibleProductSheet).rows;
-  if (possibleProdData.length === 0) {
-    handleError('No possible products found. Please add to "possible_products" before running the estimator.');
-  }
-  const possibleProducts = possibleProdData.map(function(r) {
-    return r['product_type'];
-  });
-
-  // Read Scoring Rules
-  const scoringData = readSheetData(scoringRulesSheet).rows;
-  const satisfaction = {};
-  scoringData.forEach(function(row) {
-    satisfaction[row['pick_level']] = row['score'];
-  });
-
-  // Current satisfaction
-  const currentSatisfactionScore = getCurrentSatisfactionScore();
-
-  // Number of simulation trials
-  const numTrials = possibleProducts.length * 10;
-  const scoreImprovedResults = [];
-
-  for (let trial = 0; trial < numTrials; trial++) {
-    // Randomly pick a possible product
-    const randomIndex = Math.floor(Math.random() * possibleProducts.length);
-    const newProductType = possibleProducts[randomIndex];
-    const newProduct = { product_type: newProductType };
-
-    // Simulation product list
-    const simulationProducts = products.slice();
-    simulationProducts.push(newProduct);
-
-    // Build weight matrix for simulation
-    const simWeightMatrix = buildWeightMatrix(orders, ordersHeaders, simulationProducts, satisfaction);
-    const simCostMatrix = buildCostMatrix(simWeightMatrix);
-    const assignment = _hungarianAlgorithm(simCostMatrix);
-
-    // Calculate total satisfaction for these orders
-    let totalSatisfaction = 0;
-    for (let i = 0; i < orders.length; i++) {
-      const assignedCol = assignment[i];
-      if (
-        assignedCol < simulationProducts.length &&
-        simWeightMatrix[i][assignedCol] > -1000000
-      ) {
-        totalSatisfaction += simWeightMatrix[i][assignedCol];
-      }
-    }
-
-    // Record if improved
-    scoreImprovedResults.push(totalSatisfaction > currentSatisfactionScore ? 1 : 0);
-  }
-
-  // Probability
-  const sum = scoreImprovedResults.reduce(function(a, b) { return a + b; }, 0);
-  const probabilityNextPurchaseImproves = sum / scoreImprovedResults.length;
-
-  // Update main sheet
-  const mainSheet = ss.getSheetByName('main');
-  const mainData = mainSheet.getDataRange().getValues();
-  const mainHeaders = mainData[0];
-  const probIndex = mainHeaders.indexOf('probability_next_purchase_improves_score');
-  if (probIndex === -1) {
-    handleError('Column "probability_next_purchase_improves_score" not found in "main" sheet.');
-  }
-
-  mainSheet.getRange(2, probIndex + 1).setValue(probabilityNextPurchaseImproves);
 }
