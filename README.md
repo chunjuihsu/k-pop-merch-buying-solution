@@ -1,6 +1,6 @@
-# 🎤​ Kpop Merch Buying Solution
+# 🎤​ K-pop Merch Buying Solution
 
-A Google Sheets-based solution to help Kpop merch buyers scale their businesses and improve customer satisfaction by optimizing product allocation and purchase decisions using probability and assignment logic.
+A Google Sheets-based solution to help K-pop merch buyers scale their businesses and improve customer satisfaction by optimizing product allocation and purchase decisions using probability and assignment logic.
 
 ---
 
@@ -12,7 +12,7 @@ A Google Sheets-based solution to help Kpop merch buyers scale their businesses 
 - [🚀 Getting Started](#-getting-started)
   - [Step 1: Create a Google Spreadsheet](#step-1-create-a-google-spreadsheet)
   - [Step 2: Open App Script](#step-2-open-app-script)
-  - [Step 3 (Optional): Authorize the Script](#step-3-optional-authorize-the-script)
+  - [Step 3: Configure the Project](#step-3-configure-the-project)
   - [Step 4: Copy the Script Code](#step-4-copy-the-script-code)
   - [Step 5: Initialize the Workspace](#step-5-initialize-the-workspace)
   - [Step 6: Add Possible Products](#step-6-add-possible-products)
@@ -28,7 +28,7 @@ A Google Sheets-based solution to help Kpop merch buyers scale their businesses 
 
 ## 📖 Background
 
-Kpop's global rise has brought with it a surge in demand for exclusive, limited-edition merchandise. However, many of these items are only available in South Korea, giving rise to a new type of professions: the **Kpop merch buyer**.
+K-pop's global rise has brought with it a surge in demand for exclusive, limited-edition merchandise. However, many of these items are only available in South Korea, giving rise to a new type of professions: the **K-pop merch buyer**.
 
 These individuals help international fans get merch, acting as middlemen who purchase and ship products overseas. One major challenge they face is the **mystery box** nature of most merch — buyers don't know what they’re getting until after the purchase.
 
@@ -60,23 +60,24 @@ From your Sheet: Click `Extensions` → `Apps Script`
 
 ![Open App Script](assets/images/open-app-script.png)
 
-### Step 3 (Optional): Authorize the Script
+### Step 3: Configure the Project
 
-If you are prompted with "Authorization Required" when continuing any of the following steps, follow this guide to enable access:
+You will need to configure the project for it to work. To do so, follow this guide:
 
 [Fix "This app is blocked" error](https://web.archive.org/web/20230207010146/https://aimanfikri.com/2022/05/09/this-app-is-blocked-error-on-google-apps-script-solution/)
 
+*If the project is not configured, you may see "Authorization Required" when running functions.*
+
 ### Step 4: Copy the Script Code
 
-1. Open `Code.gs` (or create a new file).
-2. Paste the script code in `Code.gs` in this repository.
+Copy the script code in `Code.gs` in this repository and paste it in the `Code.gs` of your project.
 
 ![Copy script code](assets/images/copy-script-code.png)
 
 ### Step 5: Initialize the Workspace
 
 1. Refresh your sheet.
-2. Go to the new menu: **`Kpop Merch Buying Solution`** → **`Initialize Workspace`**
+2. Go to the new menu: **`K-pop Merch Buying Solution`** → **`Initialize Workspace`**
 3. Enter the number of picks (1–10) each customer can select.
 
 ![New menu will show](assets/images/new-menu.png)
@@ -124,7 +125,7 @@ Example: apple, banana, water melon, orange, orange
 
 ### Step 9: Assign Products to Orders
 
-1. Click the menu: **`Kpop Merch Buying Solution`** → **`Assign Products to Orders`**
+1. Click the menu: **`K-pop Merch Buying Solution`** → **`Assign Products to Orders`**
 2. Check the `assigned_product` column in the `orders` sheet for the results.
 
 ![Assign products to orders](assets/images/assign-products-to-orders.png)
@@ -143,7 +144,7 @@ Use this score to evaluate how effective your current purchase was.
 
 ### Step 11: Estimate Next Purchase Probability
 
-1. Click: **`Kpop Merch Buying Solution`** → **`Estimate Probability Next Purchase Improves Score`**
+1. Click: **`K-pop Merch Buying Solution`** → **`Estimate Probability Next Purchase Improves Score`**
 2. Check the `main` sheet to see the probability that the next mystery box is going to improve customer satisfaction.
 
 ![Estimate Next Purchase Probability](assets/images/estimate-next-purchase-probability.png)
@@ -166,7 +167,7 @@ If you are happy with the satisfaction score and the probability of further impr
 
 ### Step 14: Reset Workspace
 
-- To start fresh, go to **`Kpop Merch Buying Solution`** → **`Clear Workspace`**
+- To start fresh, go to **`K-pop Merch Buying Solution`** → **`Clear Workspace`**
 - To change the number of picks allowed per order, re-run **Initialize Workspace**.
 
 ---
