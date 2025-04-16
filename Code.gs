@@ -1,7 +1,7 @@
 
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
-  ui.createMenu('Kpop Merch Buying Solution')
+  ui.createMenu('K-pop Merch Buying Solution')
     .addItem('Initialize Workspace', 'initializeWorkspace')
     .addItem('Clear Workspace', 'clearWorkspace')
     .addItem('Assign Products to Orders', 'assignProductsToOrders')
