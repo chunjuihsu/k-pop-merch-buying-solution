@@ -1,6 +1,6 @@
 # 🎤​ K-pop Merch Buying Solution
 
-A Google Sheets-based solution to help K-pop merch buyers scale their businesses and improve customer satisfaction by optimizing product allocation and purchase decisions using probability and assignment logic.
+A Google Sheets-based solution to help K-pop merch buyers scale their businesses and improve customer satisfaction by optimizing product assignment and purchase decisions using assignment logic and simulation.
 
 ---
 
