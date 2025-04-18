@@ -39,7 +39,7 @@ These individuals help international fans get merch, acting as middlemen who pur
 
 ## 💡 The Solution
 
-This tool offers two key features to solve the problems above:
+The solution offers two key features to solve the problems above:
 
 - ✅ **One-click product assignment**: Match available products to customer preferences optimally.
 - 📊 **Purchase probability estimation**: Estimate the probability that buying one more mystery box will improve total customer satisfaction.
