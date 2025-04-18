@@ -34,10 +34,8 @@ These individuals help international fans get merch, acting as middlemen who pur
 
 ## 🚨 Business Problem
 
-1. **Mystery Box Merch**: Items are sold randomly (e.g., photo cards of different group members).
-2. **Uncertain Fulfillment**: Buyers allow customers to list multiple preferred items, but matching these efficiently is difficult.
-3. **Inefficient Allocation**: Time-consuming manual assignment of products to orders.
-4. **Cost Dilemma**: Whether or not to buy another mystery box is a gamble.
+1. **Manual Matching**: Hand‑assigning inventory to ranked preferences is slow and error‑prone.
+2. **Purchase Uncertainty**: Buying extra boxes is a costly gamble with no clear ROI.
 
 ## 💡 The Solution
 
